@@ -14,6 +14,8 @@ import authRouter from "./routes/auth.js";
 import coworkingSpaceRouter from "./routes/coworkingSpaces.js";
 import UserRouter from "./routes/user.js";
 import reservationRouter from "./routes/reservations.js";
+import banIssueRouter from "./routes/banIssue.js";
+import banAppealRouter from "./routes/banAppeal.js";
 
 const app = express();
 app.use(express.json());
@@ -38,6 +40,8 @@ app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/coworkingSpaces", coworkingSpaceRouter);
 app.use("/api/v1/users", UserRouter);
 app.use("/api/v1/reservations", reservationRouter);
+app.use("/api/v1/banIssues", banIssueRouter);
+app.use("/api/v1/banAppeals", banAppealRouter);
 
 /** Swagger */
 const swaggerOptions = {

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { protect, readToken } from "../middleware.js";
-import { createCoWorkingSpace, deleteCoWorkingSpace, getCoWorkingSpace, getCoWorkingSpaces, updateCoWorkingSpace, } from "../controllers/coworkingSpace.js";
+import { createCoWorkingSpace, deleteCoWorkingSpace, getCoWorkingSpace, getCoworkingSpaceFrequency, getCoWorkingSpaces, getCoworkingSpaceTotalReservation, updateCoWorkingSpace, } from "../controllers/coworkingSpace.js";
 const router = Router();
 router.route("/").get(readToken, getCoWorkingSpaces).post(readToken, protect, createCoWorkingSpace);
 router
@@ -8,6 +8,8 @@ router
     .get(readToken, getCoWorkingSpace)
     .put(readToken, protect, updateCoWorkingSpace)
     .delete(readToken, protect, deleteCoWorkingSpace);
+router.route("/:id/frequency").get(readToken, protect, getCoworkingSpaceFrequency);
+router.route("/:id/totalReservation").get(readToken, protect, getCoworkingSpaceTotalReservation);
 export default router;
 /**
  * @swagger
