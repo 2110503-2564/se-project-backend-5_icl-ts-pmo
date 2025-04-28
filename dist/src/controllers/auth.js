@@ -13,7 +13,7 @@ function sendResponse(user, statusCode, res) {
         .json({
         success: true,
         token,
-        data: { _id: user.id, name: user.name, email: user.email, role: user.role },
+        data: { _id: user._id.toHexString(), name: user.name, email: user.email, role: user.role },
     });
 }
 export const register = async (req, res) => {

@@ -7,17 +7,13 @@ import { xss } from "express-xss-sanitizer";
 import rateLimit from "express-rate-limit";
 import hpp from "hpp";
 import cors from "cors";
+import swaggerJsDoc from "swagger-jsdoc";
+import swaggerUI from "swagger-ui-express";
 
 import authRouter from "./routes/auth.js";
 import coworkingSpaceRouter from "./routes/coworkingSpaces.js";
-// import coWorkingSpaces from "@/routes/co-working-spaces.js";
-// const reservations = require("../routes/reservations");
-import userRouter from "./routes/users.js";
-
-// const mongoose = require("mongoose");
-// mongoose.set("strictQuery", true);
-// const swaggerUI = require("swagger-ui-express");
-// const swaggerJsDoc = require("swagger-jsdoc");
+import UserRouter from "./routes/user.js";
+import reservationRouter from "./routes/reservations.js";
 
 const app = express();
 app.use(express.json());
@@ -40,8 +36,31 @@ app.get("/", (_, res) => {
 });
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/coworkingSpaces", coworkingSpaceRouter);
-// app.use("/api/v1/reservations", reservations);
-app.use("/api/v1/users", userRouter);
+app.use("/api/v1/users", UserRouter);
+app.use("/api/v1/reservations", reservationRouter);
+
+/** Swagger */
+const swaggerOptions = {
+  swaggerDefinition: {
+    openapi: "3.0.0",
+    info: {
+      title: "Co-Working Space API",
+      version: "1.0.0",
+      description: "API for Co-Working Space Reservations",
+    },
+    servers: [
+      {
+        url:
+          process.env.NODE_ENV === "development"
+            ? "http://localhost:5000/api/v1"
+            : "https://co-working-space-backend-kappa.vercel.app/api/v1",
+      },
+    ],
+  },
+  apis: ["./src/routes/*.ts"],
+};
+const swaggerDocs = swaggerJsDoc(swaggerOptions);
+app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(swaggerDocs));
 
 const PORT = Number(process.env.PORT) || 3000;
 const server = app.listen(PORT, () => {
@@ -54,29 +73,3 @@ process.on("unhandledRejection", (err) => {
 });
 
 export default app;
-
-// // Swagger Options
-// const swaggerOptions = {
-//   swaggerDefinition: {
-//     openapi: "3.0.0",
-//     info: {
-//       title: "Co-Working Space API",
-//       version: "1.0.0",
-//       description: "API for Co-Working Space Reservations",
-//     },
-//     servers: [
-//       {
-//         url:
-//           process.env.NODE_ENV === "development"
-//             ? "http://localhost:3000/api/v1"
-//             : "https://co-working-space-backend-kappa.vercel.app/api/v1",
-//       },
-//     ],
-//   },
-//   apis: ["./routes/*.js"],
-// };
-
-// const swaggerDocs = swaggerJsDoc(swaggerOptions);
-
-// // Swagger UI Middleware
-// app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(swaggerDocs));
