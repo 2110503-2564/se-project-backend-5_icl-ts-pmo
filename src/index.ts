@@ -12,6 +12,7 @@ import authRouter from "./routes/auth.js";
 import coworkingSpaceRouter from "./routes/coworkingSpaces.js";
 // import coWorkingSpaces from "@/routes/co-working-spaces.js";
 // const reservations = require("../routes/reservations");
+import userRouter from "./routes/users.js";
 
 // const mongoose = require("mongoose");
 // mongoose.set("strictQuery", true);
@@ -40,6 +41,7 @@ app.get("/", (_, res) => {
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/coworkingSpaces", coworkingSpaceRouter);
 // app.use("/api/v1/reservations", reservations);
+app.use("/api/v1/users", userRouter);
 
 const PORT = Number(process.env.PORT) || 3000;
 const server = app.listen(PORT, () => {
