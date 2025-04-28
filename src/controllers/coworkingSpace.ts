@@ -1,18 +1,7 @@
 import { RequestHandler } from "express";
 import dbConnect from "../dbConnect.js";
-import CoworkingSpace, { CoworkingSpaceType } from "../models/CoworkingSpace.js";
+import CoworkingSpace from "../models/CoworkingSpace.js";
 import Reservation from "../models/Reservation.js";
-import { UserType } from "../models/User.js";
-
-/**
- * "admin": Admin or coworkingSpace's Owner (view, edit, delete)
- *
- * "user": Normal User
- */
-type CoworkingSpacePrivilage = "admin" | "user";
-function getPrivilage(coworkingSpace: CoworkingSpaceType, user: UserType | null): CoworkingSpacePrivilage {
-  return user && (user.role == "admin" || user.id == coworkingSpace.owner) ? "admin" : "user";
-}
 
 export const getCoWorkingSpaces: RequestHandler = async (req, res) => {
   await dbConnect();
@@ -21,19 +10,16 @@ export const getCoWorkingSpaces: RequestHandler = async (req, res) => {
       CoworkingSpace.countDocuments(),
       CoworkingSpace.find(),
     ]);
-    if (coworkingSpaces) {
-      res.status(200).json({
-        success: true,
-        total: total,
-        count: coworkingSpaces.length,
-        data: coworkingSpaces.map((e) => ({ ...e.toObject(), privilage: getPrivilage(e, req.user!) })),
-      });
-      return;
-    }
+    res.status(200).json({
+      success: true,
+      total: total,
+      count: coworkingSpaces.length,
+      data: coworkingSpaces.map((e) => e.toObject()),
+    });
   } catch (error) {
     console.error(error);
+    res.status(500).json({ success: false });
   }
-  res.status(500).json({ success: false });
 };
 
 export const getCoWorkingSpace: RequestHandler = async (req, res) => {
@@ -45,7 +31,8 @@ export const getCoWorkingSpace: RequestHandler = async (req, res) => {
     } else {
       res.status(400).json({ success: false });
     }
-  } catch (err) {
+  } catch (error) {
+    console.error(error);
     res.status(500).json({ success: false });
   }
 };
@@ -87,8 +74,10 @@ export const deleteCoWorkingSpace: RequestHandler = async (req, res) => {
   try {
     const coWorkingSpace = await CoworkingSpace.findById(req.params.id);
     if (coWorkingSpace) {
-      await Reservation.deleteMany({ coWorkingSpace: req.params.id });
-      await CoworkingSpace.deleteOne({ _id: req.params.id });
+      await Promise.all([
+        CoworkingSpace.deleteOne({ _id: req.params.id }),
+        Reservation.deleteMany({ coWorkingSpace: req.params.id }),
+      ]);
       res.status(200).json({ success: true });
     } else {
       res.status(404).json({ success: false });

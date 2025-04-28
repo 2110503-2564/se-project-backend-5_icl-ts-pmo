@@ -17,7 +17,7 @@ export const checkBan: RequestHandler = async (req, res) => {
     res.status(200).json({ success: true, isBanned: !!banIssue });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false });
+    res.status(500).json({ success: false, isBanned: true });
   }
 };
 

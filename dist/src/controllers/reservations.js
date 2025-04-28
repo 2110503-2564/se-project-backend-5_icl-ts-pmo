@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import dbConnect from "../dbConnect.js";
+import CoworkingSpace from "../models/CoworkingSpace.js";
 import Reservation from "../models/Reservation.js";
 // function checkPermission(
 //   user: Session["user"],
@@ -9,11 +10,11 @@ import Reservation from "../models/Reservation.js";
 //     reservation.user === user.id || user.role === "admin" || user.id === reservation.coworkingSpace.owner
 //   );
 // }
-export const getReservations = async (req, res) => {
+export const getUserReservations = async (req, res) => {
     try {
         await dbConnect();
         const result = (await Reservation.aggregate([
-            // { $match: { ...filter, user: mongoose.Types.ObjectId.createFromHexString(userID) } },
+            { $match: { user: mongoose.Types.ObjectId.createFromHexString(req.user.id) } },
             {
                 $lookup: {
                     from: "coworkingspaces",
@@ -52,27 +53,40 @@ export const getReservations = async (req, res) => {
 export const getCoWorkingSpaceReservations = async (req, res) => {
     try {
         await dbConnect();
-        const result = (await Reservation.aggregate([
-            { $match: { coworkingSpace: mongoose.Types.ObjectId.createFromHexString(req.params.id) } },
-            { $lookup: { from: "users", localField: "user", foreignField: "_id", as: "user" } },
-            { $set: { user: { $arrayElemAt: ["$user", 0] } } },
-            {
-                $set: {
-                    _id: { $toString: "$_id" },
-                    "user._id": { $toString: "$user._id" },
-                    coworkingSpace: { $toString: "$coworkingSpace" },
+        const coworkingSpace = await CoworkingSpace.findById(req.params.id);
+        if (coworkingSpace) {
+            const result = (await Reservation.aggregate([
+                {
+                    $match: {
+                        coworkingSpace: mongoose.Types.ObjectId.createFromHexString(req.params.id),
+                        ...(req.user.role != "admin" && req.user.id != coworkingSpace.owner.toHexString()
+                            ? { user: mongoose.Types.ObjectId.createFromHexString(req.user.id) }
+                            : {}),
+                    },
                 },
-            },
-            { $group: { _id: null, data: { $push: "$$ROOT" }, total: { $count: {} } } },
-            { $project: { _id: 0, data: 1, total: 1 } },
-            // { $project: { _id: 0, data: { $slice: ["$data", page * limit, limit] }, total: 1 } },
-        ]))[0];
-        res.status(200).json({
-            success: true,
-            data: result?.data || [],
-            count: result?.data.length || 0,
-            total: result?.total || 0,
-        });
+                { $lookup: { from: "users", localField: "user", foreignField: "_id", as: "user" } },
+                { $set: { user: { $arrayElemAt: ["$user", 0] } } },
+                {
+                    $set: {
+                        _id: { $toString: "$_id" },
+                        "user._id": { $toString: "$user._id" },
+                        coworkingSpace: { $toString: "$coworkingSpace" },
+                    },
+                },
+                { $group: { _id: null, data: { $push: "$$ROOT" }, total: { $count: {} } } },
+                { $project: { _id: 0, data: 1, total: 1 } },
+                // { $project: { _id: 0, data: { $slice: ["$data", page * limit, limit] }, total: 1 } },
+            ]))[0];
+            res.status(200).json({
+                success: true,
+                data: result?.data || [],
+                count: result?.data.length || 0,
+                total: result?.total || 0,
+            });
+        }
+        else {
+            res.status(404).json({ success: false });
+        }
     }
     catch (error) {
         console.error(error);
@@ -82,12 +96,9 @@ export const getCoWorkingSpaceReservations = async (req, res) => {
 export const getReservation = async (req, res) => {
     try {
         await dbConnect();
-        const reservation = await Reservation.findById(req.params.id).populate("coworkingSpace");
-        if (reservation) {
+        const reservation = await getPopulatedReservation(req.params.id, res);
+        if (reservation && checkPermission(reservation, req.user, res)) {
             res.status(200).json({ success: true, data: reservation });
-        }
-        else {
-            res.status(404).json({ success: false });
         }
     }
     catch (error) {
@@ -116,8 +127,9 @@ export const createReservation = async (req, res) => {
 export const updateReservation = async (req, res) => {
     try {
         await dbConnect();
-        const reservation = await Reservation.findById(req.params.id);
-        if (reservation) {
+        const reservation = await getPopulatedReservation(req.params.id, res);
+        if (reservation && checkPermission(reservation, req.user, res)) {
+            // ! Vulnerability
             if (reservation.approvalStatus == "pending") {
                 const updatedReservation = await Reservation.findByIdAndUpdate(req.params.id, req.body, {
                     new: true,
@@ -134,9 +146,6 @@ export const updateReservation = async (req, res) => {
                 res.status(400).json({ success: false });
             }
         }
-        else {
-            res.status(404).json({ success: false });
-        }
     }
     catch (error) {
         console.error(error);
@@ -145,9 +154,8 @@ export const updateReservation = async (req, res) => {
 };
 export const deleteReservation = async (req, res) => {
     try {
-        await dbConnect();
-        const reservation = await Reservation.findById(req.params.id);
-        if (reservation) {
+        const reservation = await getPopulatedReservation(req.params.id, res);
+        if (reservation && checkPermission(reservation, req.user, res)) {
             const result = await reservation.deleteOne();
             if (result.acknowledged) {
                 res.status(200).json({ success: true });
@@ -156,12 +164,25 @@ export const deleteReservation = async (req, res) => {
                 res.status(500).json({ success: false });
             }
         }
-        else {
-            res.status(404).json({ success: false });
-        }
     }
     catch (error) {
         console.error(error);
         res.status(500).json({ success: false });
     }
 };
+function checkPermission(reservation, user, res) {
+    if (user.role == "admin" ||
+        user.id == reservation.coworkingSpace.owner.toHexString() ||
+        user.id == reservation.user.toHexString()) {
+        return true;
+    }
+    res.status(403).json({ success: false });
+    return false;
+}
+async function getPopulatedReservation(id, res) {
+    const reservation = (await Reservation.findById(id).populate("coworkingSpace"));
+    if (reservation)
+        return reservation;
+    res.status(404).json({ success: false });
+    return false;
+}

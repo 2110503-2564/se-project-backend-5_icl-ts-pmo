@@ -15,7 +15,7 @@ export const checkBan = async (req, res) => {
     }
     catch (error) {
         console.error(error);
-        res.status(500).json({ success: false });
+        res.status(500).json({ success: false, isBanned: true });
     }
 };
 export async function resolveExpiredBan() {
