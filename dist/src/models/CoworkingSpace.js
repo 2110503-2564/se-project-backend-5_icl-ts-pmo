@@ -7,6 +7,11 @@ const CoWorkingSpaceSchema = new mongoose.Schema({
         trim: true,
         maxlength: [50, "Name can not be more than 50 characters"],
     },
+    description: {
+        type: String,
+        required: [true, "Please add a description"],
+        maxlength: [500, "Name can not be more than 500 characters"],
+    },
     address: { type: String, required: [true, "Please add an address"] },
     province: { type: String, required: [true, "Please add a province"] },
     district: { type: String, required: [true, "Please add a district"] },

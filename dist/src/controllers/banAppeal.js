@@ -82,7 +82,7 @@ export const getBanAppeal = async (req, res) => {
         if (!banAppeal) {
             res.status(404).json({ success: false });
         }
-        else if (banAppeal.banIssue.user.toHexString() != req.user.id && req.user.role != "admin") {
+        else if (banAppeal.banIssue.user != req.user.id && req.user.role != "admin") {
             res.status(403).json({ success: false });
         }
         else {
@@ -124,7 +124,7 @@ export const createBanAppealComment = async (req, res) => {
         await dbConnect();
         const banAppeal = await BanAppeal.findByIdAndUpdate(req.params.appeal, { $push: { comment: { ...req.body, user: req.user.id } } }, { new: true, runValidators: true });
         if (banAppeal) {
-            res.status(201).json({ success: true });
+            res.status(201).json({ success: true, data: banAppeal });
         }
         else {
             res.status(500).json({ success: false });

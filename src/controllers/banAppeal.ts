@@ -102,7 +102,7 @@ export const getBanAppeal: RequestHandler = async (req, res) => {
     )[0];
     if (!banAppeal) {
       res.status(404).json({ success: false });
-    } else if (banAppeal.banIssue.user.toHexString() != req.user!.id && req.user!.role != "admin") {
+    } else if (banAppeal.banIssue.user != req.user!.id && req.user!.role != "admin") {
       res.status(403).json({ success: false });
     } else {
       res.status(200).json({ success: true, data: banAppeal });
@@ -144,7 +144,7 @@ export const createBanAppealComment: RequestHandler = async (req, res) => {
       { new: true, runValidators: true }
     );
     if (banAppeal) {
-      res.status(201).json({ success: true });
+      res.status(201).json({ success: true, data: banAppeal });
     } else {
       res.status(500).json({ success: false });
     }

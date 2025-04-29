@@ -4,6 +4,6 @@ import { getBanAppeals } from "../controllers/banAppeal.js";
 
 const router = Router();
 
-router.get("/banAppeals", readToken, protect, getBanAppeals);
+router.get("/", readToken, protect, getBanAppeals);
 
 export default router;

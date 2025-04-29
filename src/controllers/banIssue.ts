@@ -142,13 +142,14 @@ export const createBanIssue: RequestHandler = async (req, res) => {
     await dbConnect();
     const user = await User.findById(req.params.id);
     if (!user) {
-      res.status(400).json({ success: false, message: "user not found" });
+      res.status(404).json({ success: false, message: "user not found" });
     } else if (
       (await BanIssue.countDocuments({
-        user: req.user!.id,
+        user: mongoose.Types.ObjectId.createFromHexString(req.user!.id),
         ...ActiveBanFilter,
       })) > 0
     ) {
+      console.log(req.body);
       res.status(400).json({ success: false, message: "user is already banned" });
     } else {
       const banIssue = await BanIssue.insertOne({ ...req.body, user: user.id, admin: req.user!.id });

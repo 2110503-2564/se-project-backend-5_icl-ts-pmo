@@ -35,7 +35,8 @@ export const authorize = (...roles: string[]) => {
         success: false,
         message: `User role ${req.user!.role} is not authorized to access this route`,
       });
+    } else {
+      next();
     }
-    next();
   };
 };
