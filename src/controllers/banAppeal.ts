@@ -4,8 +4,13 @@ import BanAppeal, { BanAppealType, Comment } from "../models/BanAppeal.js";
 import BanIssue, { BanIssueType } from "../models/BanIssue.js";
 import { UserType } from "../models/User.js";
 import mongoose from "mongoose";
+import { readPagination, validateRegex } from "./utils.js";
 
 export const getBanAppeals: RequestHandler = async (req, res) => {
+  const { page, limit } = readPagination(req, 10);
+  const filter: mongoose.FilterQuery<BanIssueType> = req.query.search
+    ? { title: { $regex: validateRegex(req.query.search as string) } }
+    : {};
   try {
     await dbConnect();
     const result = (
@@ -19,7 +24,15 @@ export const getBanAppeals: RequestHandler = async (req, res) => {
         | undefined
       >([
         { $project: { comment: 0 } },
-        { $lookup: { from: "banissues", localField: "banIssue", foreignField: "_id", as: "banIssue" } },
+        {
+          $lookup: {
+            from: "banissues",
+            localField: "banIssue",
+            foreignField: "_id",
+            as: "banIssue",
+            pipeline: [{ $match: filter }],
+          },
+        },
         { $set: { banIssue: { $arrayElemAt: ["$banIssue", 0] } } },
         { $lookup: { from: "users", localField: "banIssue.user", foreignField: "_id", as: "banIssue.user" } },
         { $set: { "banIssue.user": { $arrayElemAt: ["$banIssue.user", 0] } } },
@@ -32,8 +45,7 @@ export const getBanAppeals: RequestHandler = async (req, res) => {
           },
         },
         { $group: { _id: null, data: { $push: "$$ROOT" }, total: { $count: {} } } },
-        { $project: { _id: 0, data: 1, total: 1 } },
-        // { $project: { _id: 0, data: { $slice: ["$data", page * limit, limit] }, total: 1 } },
+        { $project: { _id: 0, data: { $slice: ["$data", page * limit, limit] }, total: 1 } },
       ])
     )[0];
     res.status(200).json({

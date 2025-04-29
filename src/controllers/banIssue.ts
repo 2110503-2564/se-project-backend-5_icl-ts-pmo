@@ -1,9 +1,10 @@
-import { RequestHandler } from "express";
+import { RequestHandler, Request } from "express";
 import mongoose from "mongoose";
 import dbConnect from "../dbConnect.js";
 import BanIssue, { BanIssueType } from "../models/BanIssue.js";
 import User, { UserType } from "../models/User.js";
 import { BanAppealType } from "../models/BanAppeal.js";
+import { readPagination, validateRegex } from "./utils.js";
 
 export const ActiveBanFilter: mongoose.FilterQuery<BanIssueType> = {
   endDate: { $gt: new Date() },
@@ -53,6 +54,7 @@ export const checkBan: RequestHandler = async (req, res) => {
 export const getActiveBanIssues: RequestHandler = async (req, res) => {
   try {
     const { data, total } = await getBanIssuesDB({
+      ...{ ...readPagination(req, 10), search: validateRegex(req.query.search as string) },
       ...ActiveBanFilter,
       ...(req.user!.role == "user"
         ? { user: mongoose.Types.ObjectId.createFromHexString(req.user!.id) }
@@ -68,6 +70,7 @@ export const getActiveBanIssues: RequestHandler = async (req, res) => {
 export const getUserBanIssues: RequestHandler = async (req, res) => {
   try {
     const { data, total } = await getBanIssuesDB({
+      ...{ ...readPagination(req, 10), search: validateRegex(req.query.search as string) },
       user: mongoose.Types.ObjectId.createFromHexString(req.user!.id),
     });
     res.status(200).json({ success: true, total, count: data.length, data });
@@ -184,7 +187,11 @@ export const resolveBanIssue: RequestHandler = async (req, res) => {
   }
 };
 
-async function getBanIssuesDB(filter: mongoose.FilterQuery<BanIssueType>) {
+async function getBanIssuesDB(
+  filter: mongoose.FilterQuery<BanIssueType>,
+  query: { page?: number; limit?: number; search?: string } = {}
+) {
+  const { page = 0, limit = 10, search = "" } = query;
   await dbConnect();
   const result = (
     await BanIssue.aggregate<
@@ -201,7 +208,7 @@ async function getBanIssuesDB(filter: mongoose.FilterQuery<BanIssueType>) {
           localField: "user",
           foreignField: "_id",
           as: "user",
-          // pipeline: [{ $match: { $or: [{ name: { $regex: search } }, { email: { $regex: search } }] } }],
+          pipeline: [{ $match: { $or: [{ name: { $regex: search } }, { email: { $regex: search } }] } }],
         },
       },
       { $lookup: { from: "users", localField: "admin", foreignField: "_id", as: "admin" } },
@@ -216,7 +223,7 @@ async function getBanIssuesDB(filter: mongoose.FilterQuery<BanIssueType>) {
       },
       { $group: { _id: null, data: { $push: "$$ROOT" }, total: { $count: {} } } },
       { $project: { _id: 0, data: 1, total: 1 } },
-      // { $project: { _id: 0, data: { $slice: ["$data", page * limit, limit] }, total: 1 } },
+      { $project: { _id: 0, data: { $slice: ["$data", page * limit, limit] }, total: 1 } },
     ])
   )[0];
   return { data: result?.data || [], total: result?.total || 0 };

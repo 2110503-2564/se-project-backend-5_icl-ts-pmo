@@ -1,15 +1,20 @@
-import { RequestHandler } from "express";
+import mongoose from "mongoose";
 import dbConnect from "../dbConnect.js";
-import CoworkingSpace from "../models/CoworkingSpace.js";
+import { RequestHandler } from "express";
+import CoworkingSpace, { CoworkingSpaceType } from "../models/CoworkingSpace.js";
 import Reservation, { ReservationType } from "../models/Reservation.js";
-import mongoose, { Types } from "mongoose";
+import { readPagination, validateRegex } from "./utils.js";
 
 export const getCoWorkingSpaces: RequestHandler = async (req, res) => {
+  const filter: mongoose.FilterQuery<CoworkingSpaceType> = {
+    ...(req.query.search ? { name: { $regex: validateRegex(req.query.search as string) } } : {}),
+  };
+  const { page, limit } = readPagination(req, 25);
   await dbConnect();
   try {
     const [total, coworkingSpaces] = await Promise.all([
-      CoworkingSpace.countDocuments(),
-      CoworkingSpace.find(),
+      CoworkingSpace.countDocuments(filter),
+      CoworkingSpace.find(filter, undefined, { skip: page * limit, limit }),
     ]);
     res.status(200).json({
       success: true,

@@ -1,13 +1,18 @@
+import mongoose from "mongoose";
 import dbConnect from "../dbConnect.js";
 import CoworkingSpace from "../models/CoworkingSpace.js";
 import Reservation from "../models/Reservation.js";
-import mongoose from "mongoose";
+import { readPagination, validateRegex } from "./utils.js";
 export const getCoWorkingSpaces = async (req, res) => {
+    const filter = {
+        ...(req.query.search ? { name: { $regex: validateRegex(req.query.search) } } : {}),
+    };
+    const { page, limit } = readPagination(req, 25);
     await dbConnect();
     try {
         const [total, coworkingSpaces] = await Promise.all([
-            CoworkingSpace.countDocuments(),
-            CoworkingSpace.find(),
+            CoworkingSpace.countDocuments(filter),
+            CoworkingSpace.find(filter, undefined, { skip: page * limit, limit }),
         ]);
         res.status(200).json({
             success: true,

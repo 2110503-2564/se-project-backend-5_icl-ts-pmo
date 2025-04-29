@@ -2,25 +2,34 @@ import mongoose from "mongoose";
 import dbConnect from "../dbConnect.js";
 import CoworkingSpace from "../models/CoworkingSpace.js";
 import Reservation from "../models/Reservation.js";
-// function checkPermission(
-//   user: Session["user"],
-//   reservation: Omit<ReservationType, "coworkingSpace"> & { coworkingSpace: CWS }
-// ) {
-//   return (
-//     reservation.user === user.id || user.role === "admin" || user.id === reservation.coworkingSpace.owner
-//   );
-// }
+import { validateRegex, readPagination } from "./utils.js";
+function reservationFilter(req) {
+    const { min, max, status } = req.query;
+    return {
+        ...(min || max ? { personCount: { ...(min ? { $gte: min } : {}), ...(max ? { $lte: max } : {}) } } : {}),
+        ...(status ? { approvalStatus: { $in: status.split(" ") } } : {}),
+    };
+}
 export const getUserReservations = async (req, res) => {
+    const filter = {
+        ...(req.query.search ? { name: { $regex: validateRegex(req.query.search) } } : {}),
+    };
+    const { page, limit } = readPagination(req, 10);
     try {
         await dbConnect();
         const result = (await Reservation.aggregate([
-            { $match: { user: mongoose.Types.ObjectId.createFromHexString(req.user.id) } },
+            {
+                $match: {
+                    ...reservationFilter(req),
+                    user: mongoose.Types.ObjectId.createFromHexString(req.user.id),
+                },
+            },
             {
                 $lookup: {
                     from: "coworkingspaces",
                     localField: "coworkingSpace",
                     foreignField: "_id",
-                    // pipeline: [{ $match: cwsFilter }],
+                    pipeline: [{ $match: filter }],
                     as: "coworkingSpace",
                 },
             },
@@ -35,8 +44,7 @@ export const getUserReservations = async (req, res) => {
                 },
             },
             { $group: { _id: null, data: { $push: "$$ROOT" }, total: { $count: {} } } },
-            { $project: { _id: 0, data: 1, total: 1 } },
-            // { $project: { _id: 0, data: { $slice: ["$data", page * limit, limit] }, total: 1 } },
+            { $project: { _id: 0, data: { $slice: ["$data", page * limit, limit] }, total: 1 } },
         ]))[0];
         res.status(200).json({
             success: true,
@@ -58,6 +66,7 @@ export const getCoWorkingSpaceReservations = async (req, res) => {
             const result = (await Reservation.aggregate([
                 {
                     $match: {
+                        ...reservationFilter(req),
                         coworkingSpace: mongoose.Types.ObjectId.createFromHexString(req.params.id),
                         ...(req.user.role != "admin" && req.user.id != coworkingSpace.owner.toHexString()
                             ? { user: mongoose.Types.ObjectId.createFromHexString(req.user.id) }
@@ -106,6 +115,22 @@ export const getReservation = async (req, res) => {
         res.status(500).json({ success: false });
     }
 };
+function checkPermission(reservation, user, res) {
+    if (user.role == "admin" ||
+        user.id == reservation.coworkingSpace.owner.toHexString() ||
+        user.id == reservation.user.toHexString()) {
+        return true;
+    }
+    res.status(403).json({ success: false });
+    return false;
+}
+async function getPopulatedReservation(id, res) {
+    const reservation = (await Reservation.findById(id).populate("coworkingSpace"));
+    if (reservation)
+        return reservation;
+    res.status(404).json({ success: false });
+    return false;
+}
 export const createReservation = async (req, res) => {
     try {
         await dbConnect();
@@ -170,19 +195,3 @@ export const deleteReservation = async (req, res) => {
         res.status(500).json({ success: false });
     }
 };
-function checkPermission(reservation, user, res) {
-    if (user.role == "admin" ||
-        user.id == reservation.coworkingSpace.owner.toHexString() ||
-        user.id == reservation.user.toHexString()) {
-        return true;
-    }
-    res.status(403).json({ success: false });
-    return false;
-}
-async function getPopulatedReservation(id, res) {
-    const reservation = (await Reservation.findById(id).populate("coworkingSpace"));
-    if (reservation)
-        return reservation;
-    res.status(404).json({ success: false });
-    return false;
-}
