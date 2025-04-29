@@ -12,4 +12,4 @@ jobs:
           node-version: 'lts/*'
       - run: npm ci
       - run: npm test
-      - run: npm test-coverage
+      - run: npm run test-coverage
