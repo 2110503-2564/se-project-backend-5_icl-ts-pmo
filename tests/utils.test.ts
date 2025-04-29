@@ -43,7 +43,7 @@ describe('test readPagination function', () => {
   test('TC4: change default limit', () => {
     const req = {
       body: {},
-      query: {limit: 10},
+      query: {},
       params: {},
       headers: {},
     }
