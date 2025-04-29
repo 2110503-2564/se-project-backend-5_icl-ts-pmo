@@ -65,7 +65,7 @@ export default router;
  *           description: Ban title (max 50 length)
  *         description:
  *           type: string
- *           description: Description why he got ban
+ *           description: Ban description
  *         createdAt:
  *           type: date
  *           description: Ban begin

@@ -31,13 +31,15 @@ export default router;
  *       type: object
  *       required:
  *         - name
+ *         - description
  *         - address
  *         - district
+ *         - subDistrict
  *         - province
  *         - postalcode
- *         - tel
- *         - open_close_time
- *         - picture
+ *         - openTime
+ *         - closeTime
+ *         - owner
  *       properties:
  *         _id:
  *           type: string
@@ -47,52 +49,61 @@ export default router;
  *         name:
  *           type: string
  *           description: Co-working space name
+ *         description:
+ *           type: string
+ *           description: Co-working space description
  *         address:
  *           type: string
- *           description: Address name
+ *           description: Street number
  *         district:
  *           type: string
  *           description: District name
+ *         subDistrict:
+ *           type: string
+ *           description: Sub-district name
  *         province:
  *           type: string
  *           description: Province name
  *         postalcode:
  *           type: string
  *           description: 5-digit postal code
+ *         openTime:
+ *           type: date
+ *           description: Open time
+ *         closeTime:
+ *           type: date
+ *           description: Close time 
  *         tel:
  *           type: string
  *           description: Telephone number
- *         open_close_time:
+ *         owner:
  *           type: string
- *           description: Open time (hh:mm) and close time (hh:mm)
- *         __v:
- *           type: integer
- *           description: Auto-generated number
+ *           description: Owner id
  *         picture:
  *           type: string
  *           description: Picture address
+ *         __v:
+ *           type: integer
+ *           description: Auto-generated number
  *         id:
  *           type: string
  *           format: uuid
  *           description: The auto-generated id of the co-working space
- *           example: 67c1c6e9bb57d2646f56d4a2
- *         privilage:
- *           type: string
- *           description: Role
- *
+ * 
  *       example:
  *         _id: 609bda561452242d88d36e37
  *         name: Happy Meal
  *         address: Buffalo
- *         district: North Lincoln
  *         province: Bangkok
+ *         district: North Lincoln
+ *         subDistrict: Lueilwitz Squares
  *         postalcode: 10110
- *         tel: 02-2187000
- *         open_close_time: 8.00-21.00
- *         picture: https://
+ *         openTime: 2025-04-27T21:55:47.000Z
+ *         closeTime: 2025-04-27T17:59:17.000Z
+ *         tel: 023-218-7000
+ *         owner: 680e00036a4cf8103db056af
  *         __v: 0
  *         id: 609bda561452242d88d36e37
- *         privilage: user
  */
 /**
  * @swagger
@@ -115,6 +126,8 @@ export default router;
  *               type: array
  *               items:
  *                 $ref: '#/components/schemas/CoWorkingSpace'
+ *       500:
+ *         description: Some server error
  */
 /**
  * @swagger
@@ -136,8 +149,10 @@ export default router;
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/CoWorkingSpace'
- *       404:
- *         description: The co-working space was not found
+ *       400:
+ *         description: Bad request
+ *       500:
+ *         description: Some server error
  */
 /**
  * @swagger

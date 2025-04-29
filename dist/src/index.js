@@ -50,7 +50,7 @@ const swaggerOptions = {
             {
                 url: process.env.NODE_ENV === "development"
                     ? "http://localhost:5000/api/v1"
-                    : "https://co-working-space-backend-kappa.vercel.app/api/v1",
+                    : "https://se-project-backend-5-icl-ts-pmo.vercel.app/",
             },
         ],
     },

@@ -15,8 +15,9 @@ export default router;
  *       type: object
  *       required:
  *         - name
- *         - email
  *         - phone
+ *         - email
+ *         - password
  *       properties:
  *         _id:
  *           type: string
@@ -26,15 +27,19 @@ export default router;
  *         name:
  *           type: string
  *           description: Username
- *         telephone_number:
+ *         phone:
  *           type: string
  *           description: Phone number
  *         email:
  *           type: string
  *           description: Email address
+ *         password:
+ *           type: string
+ *           description: Password
  *         role:
  *           type: string
  *           description: User role
+ *           enum: [user, admin]
  *         createdAt:
  *           type: date
  *           description: Time this account was created
@@ -49,7 +54,7 @@ export default router;
  *       example:
  *         _id: 680f6a5d3d2cec585c50789e
  *         name: Crymai
- *         telephone_number: "0123456789"
+ *         phone: "0123456789"
  *         email: Crymai@gmail.com
  *         role: user
  *         createdAt: 2025-04-28T11:45:33.457Z

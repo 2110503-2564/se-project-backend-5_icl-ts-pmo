@@ -33,9 +33,11 @@ export default router;
  *         - startDate
  *         - endDate
  *         - personCount
- *         - approvalStatus
- *         - createdAt
  *       properties:
+ *         _id:
+ *           type: string
+ *           format: uuid
+ *           description: The auto-generated id of the reservation
  *         user:
  *           type: string
  *           description: user id
@@ -54,23 +56,15 @@ export default router;
  *         approvalStatus:
  *           type: string
  *           description: Reservation status
+ *           enum: [pending, canceled, approved, rejected]
  *         createdAt:
  *           type: date
  *           description: Time this account was created
- *         _id:
- *           type: string
- *           format: uuid
- *           description: The auto-generated id of the reservation
- *           example: 680f6a5d3d2cec585c50789e
  *         __v:
  *           type: integer
  *           description: Auto-generated number
- *         id:
- *           type: string
- *           format: uuid
- *           description: The auto-generated id of the reservation
- *           example: 680f6a5d3d2cec585c50789e
  *       example:
+ *         _id: 680f9808f1bd1b7c72d13a3c
  *         user: 67eb8d8645740e59ebef42d6
  *         coworkingSpace: 67c1a7e7ca65533d7eb9900c
  *         startDate: 2025-04-01T06:53:58.727Z
@@ -78,9 +72,7 @@ export default router;
  *         personCount: 4
  *         approvalStatus: pending
  *         createdAt: 2025-04-01T06:53:58.727Z
- *         _id: 680f9808f1bd1b7c72d13a3c
  *         __v: 0
- *         id: 680f9808f1bd1b7c72d13a3c
  */
 /**
  * @swagger
