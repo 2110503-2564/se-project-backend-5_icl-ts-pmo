@@ -66,7 +66,7 @@ export default router;
  * @swagger
  * /users/{id}:
  *   get:
- *     summary: Get the user space by id
+ *     summary: Get the user by id
  *     tags: [Users]
  *     parameters:
  *       - in: path
